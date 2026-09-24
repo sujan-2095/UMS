@@ -1,0 +1,5 @@
+{
+  "name": "User Management System (UMS)",
+  "description": "Full-stack User Management System with Role-Based Access Control (RBAC), JWT authentication, user registration, user management, and secure REST APIs.",
+  "requestFramePermissions": []
+}
