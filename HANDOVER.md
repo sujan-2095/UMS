@@ -1,8 +1,8 @@
 # UMS --- Project Handover Document
 
 **Project:** User Management System (UMS)\
-**Version:** V1.0\
-**Last Updated:** 24 September 2026\
+**Version:** V1.1\
+**Last Updated:** 27 September 2026\
 **Repository:** `https://github.com/sujan-2095/UMS`
 
 ------------------------------------------------------------------------
@@ -67,22 +67,24 @@ removed.
 ### Frontend
 
 -   React 19
--   TypeScript
--   Vite
--   React Router
--   Tailwind CSS
--   React Context API
+-   TypeScript 5+
+-   Vite 8
+-   React Router DOM 7
+-   Tailwind CSS v4 (with `@layer base` custom design tokens)
+-   Google Font Inter typography
+-   Lucide React icons & Motion
+-   React Context API (stateless auth provider)
 
 ### Backend
 
--   Java
--   Spring Boot 3
+-   Java 17
+-   Spring Boot 3.2.4
 -   Spring Security 6
 -   Spring Data JPA
 -   Hibernate
 -   Maven
--   JWT
--   BCrypt
+-   JJWT (0.12.5)
+-   BCrypt (work factor 10)
 
 ### Database
 
@@ -92,7 +94,7 @@ removed.
 
 ------------------------------------------------------------------------
 
-# 3. Major Refactoring Already Completed
+# 3. Major Refactoring and Recent Enhancements
 
 ## 3.1 Single Backend Architecture
 
@@ -164,32 +166,77 @@ This rule is applied in:
 -   Admin user creation frontend
 -   Admin user creation backend
 
+Frontend also validates name format (letters and spaces only, 2-50 chars) and email format regex.
+
 ------------------------------------------------------------------------
 
-## 3.5 Dashboard Simplified
+## 3.5 Role-Differentiated Dashboard
 
-The dashboard is intentionally simple.
+The dashboard provides a tailored experience based on user role:
 
-It provides:
-
--   User greeting
--   Current role
--   Navigation to relevant functionality
+### For ADMIN:
+-   Real-time aggregated counts queried directly from MySQL:
+    -   *Total Users*
+    -   *Administrators*
+    -   *Standard Users*
+-   Recent user registrations list (latest 5 registrations with role and timestamp)
+-   Quick shortcuts to View Users or open the Add User modal directly (`/users?action=add`)
 -   Logout
 
-Unnecessary analytics, testing dashboards, role comparison displays, and
-mock metrics are not part of V1.
+### For USER:
+-   Streamlined Account Summary card displaying user name, email, active role, and read-only access indicator
+-   Quick link to View Users
+-   Logout
+
+Unnecessary complex analytics, testing dashboards, and mock charts are omitted to keep V1 focused and clean.
 
 ------------------------------------------------------------------------
 
-## 3.6 Stable UI Selectors
+## 3.6 Design System & Responsive Navigation
+
+The frontend design system has been overhauled using Tailwind CSS v4:
+-   Centralized theme variables (`--bg-base: #0B1120`, `--surface: #111827`, `--primary: #4F46E5`, etc.) in `index.css`
+-   Inter font typography with smoothed subpixel rendering
+-   Slim custom scrollbars
+-   Responsive mobile drawer menu in `Navbar.tsx` featuring hamburger trigger, active tab highlights, role badge, and sign-out button
+
+------------------------------------------------------------------------
+
+## 3.7 User Directory Search & Role Filtering
+
+The Users view (`UsersList.tsx`) supports interactive client-side operations:
+-   Live search input matching names or email addresses with clear button
+-   Role filter buttons (`ALL`, `ADMIN`, `USER`) with live matching count badges
+-   Read-only information banner for standard users explaining their permission tier
+
+------------------------------------------------------------------------
+
+## 3.8 Dual-Layer Self-Deletion Protection
+
+To protect active administrators from deleting their own account:
+1.  **Frontend**: The Delete button for the currently authenticated admin is visually disabled (`opacity-30 cursor-not-allowed`) with a tooltip explanation, and a "You" marker badge is rendered in the name column.
+2.  **Backend**: `UserService.deleteUser()` validates that the targeted user email does not match `Authentication.getName()`. If a match occurs, it throws `IllegalArgumentException` returning `400 Bad Request`.
+
+------------------------------------------------------------------------
+
+## 3.9 Stable UI Selectors
 
 Important UI elements have stable `id` and/or `data-testid` attributes.
 
-These selectors are retained so external Selenium automation can be
-written later.
+These selectors are retained so external Selenium automation and API testing can be written cleanly.
 
 No Selenium code is embedded inside the application.
+
+------------------------------------------------------------------------
+
+## 3.10 Clean Developer Experience & Logging Optimization
+
+Backend logging and runtime flags are optimized for a quiet, high-signal developer terminal:
+-   `logging.level.root=WARN` suppresses noisy framework startup output from Tomcat, Spring, Hibernate, and HikariCP.
+-   `logging.level.com.example.ums=INFO` guarantees that application events (database initialization, security audits, admin seeding) remain prominently visible.
+-   `spring.jpa.open-in-view=false` disables the Open EntityManager in View pattern and eliminates the default startup warning.
+-   Removed redundant Hibernate dialect configuration in favor of Hibernate 6 automated dialect detection.
+-   Configured `<jvmArguments>--enable-native-access=ALL-UNNAMED</jvmArguments>` in `spring-boot-maven-plugin` to eliminate Java 25 Tomcat JNI restricted access warnings automatically during `mvn spring-boot:run`.
 
 ------------------------------------------------------------------------
 
@@ -414,16 +461,20 @@ Unauthenticated users are redirected to:
 /login
 ```
 
-The dashboard displays:
+The dashboard provides role-differentiated capabilities:
 
--   User name
--   Current role
--   Relevant navigation actions
--   Logout
+### ADMIN Dashboard
+-   User greeting and role indicator badge
+-   Real-time aggregated metrics queried directly from MySQL via `api.getUsers()`:
+    -   **Total Users**: Count of all registered user records
+    -   **Administrators**: Count of accounts with elevated write/delete privileges
+    -   **Standard Users**: Count of accounts with read-only directory privileges
+-   **Recent Users Table**: The 5 most recent registrations displaying Name, Email, Role badge, and Creation Date
+-   Direct navigation buttons: "View Users", "Add User" (navigates to `/users?action=add`), and "Logout"
 
-ADMIN receives ADMIN-specific navigation.
-
-USER receives USER-level navigation.
+### USER Dashboard
+-   Account Summary card displaying Profile Name, Email, Active Role (`USER`), and Access Level indicator ("Read-only Directory Access")
+-   Direct action buttons: "View Users" and "Logout"
 
 ------------------------------------------------------------------------
 
@@ -448,7 +499,13 @@ The backend retrieves users from MySQL and converts entities to
 
 The password field is never exposed.
 
-The frontend displays the user information in a table.
+The frontend displays the user information in an interactive table with:
+-   **Real-Time Client Search**: Instant filtering by name or email with quick clear button
+-   **Role Filters**: Toggle between `ALL`, `ADMIN`, and `USER` with matching count badges
+-   **Read-Only Banner**: Explains restricted permissions to standard users
+-   **"You" Identifier**: Tags the currently authenticated user's row
+-   **Proactive Protection**: Disables the Delete button for the current logged-in admin with a tooltip explanation
+-   **Dismissible Feedback Alerts**: Success and error banners with auto-clear and manual close buttons
 
 ------------------------------------------------------------------------
 
@@ -1055,6 +1112,9 @@ server.port
 spring.datasource.url
 spring.datasource.username
 spring.datasource.password
+spring.jpa.open-in-view
+logging.level.root
+logging.level.com.example.ums
 ums.jwt.secret
 ums.jwt.expiration-ms
 ums.init.admin.email
@@ -1151,6 +1211,12 @@ Run:
 
 ``` bash
 mvn spring-boot:run
+```
+
+Or for a quiet development terminal without Maven build chatter:
+
+``` bash
+mvn -q spring-boot:run
 ```
 
 Backend runs on:
@@ -1262,105 +1328,93 @@ the frontend redirects to:
 
 # 29. Stable UI Selectors
 
-The following selectors are intentionally stable for future external
-Selenium automation.
+The following selectors are intentionally stable for future external Selenium automation and API verification.
 
-  -----------------------------------------------------------------------
-  Element                             `id` / `data-testid`
-  ----------------------------------- -----------------------------------
-  Register name                       `name-input` / `register-name`
-
-  Register email                      `email-input` / `register-email`
-
-  Register password                   `password-input` /
-                                      `register-password`
-
-  Confirm password                    `confirm-password-input` /
-                                      `register-confirm-password`
-
-  Register submit                     `register-submit-btn` /
-                                      `register-submit`
-
-  Login email                         `login-email-input` / `login-email`
-
-  Login password                      `login-password-input` /
-                                      `login-password`
-
-  Login submit                        `login-submit-btn` / `login-submit`
-
-  Users table                         `user-table`
-
-  User row                            `user-row-{id}`
-
-  Add user                            `add-user-btn` / `add-user-button`
-
-  New user name                       `new-user-name`
-
-  New user email                      `new-user-email`
-
-  New user password                   `new-user-password`
-
-  Create user                         `create-user-submit-btn` /
-                                      `create-user-submit`
-
-  Delete user                         `delete-user-{id}`
-
-  Confirm delete                      `confirm-delete-btn` /
-                                      `confirm-delete`
-
-  Cancel delete                       `cancel-delete-btn` /
-                                      `cancel-delete`
-
-  Logout                              `logout-btn` / `logout-button`
-
-  Role badge                          `user-role-badge`
-  -----------------------------------------------------------------------
+| Component | Element Description | HTML `id` | `data-testid` | Source Component File |
+|---|---|---|---|---|
+| **Auth - Login** | Email Input | `login-email-input` | `login-email` | `Login.tsx` |
+| **Auth - Login** | Password Input | `login-password-input` | `login-password` | `Login.tsx` |
+| **Auth - Login** | Submit Button | `login-submit-btn` | `login-submit` | `Login.tsx` |
+| **Auth - Login** | Error Banner Alert | `login-error-banner` | — | `Login.tsx` |
+| **Auth - Register** | Full Name Input | `name-input` | `register-name` | `Register.tsx` |
+| **Auth - Register** | Name Validation Error | `name-error` | — | `Register.tsx` |
+| **Auth - Register** | Email Input | `email-input` | `register-email` | `Register.tsx` |
+| **Auth - Register** | Email Validation Error | `email-error` | — | `Register.tsx` |
+| **Auth - Register** | Password Input | `password-input` | `register-password` | `Register.tsx` |
+| **Auth - Register** | Password Validation Error | `password-error` | — | `Register.tsx` |
+| **Auth - Register** | Confirm Password Input | `confirm-password-input` | `register-confirm-password` | `Register.tsx` |
+| **Auth - Register** | Confirm Password Error | `confirm-password-error` | — | `Register.tsx` |
+| **Auth - Register** | Submit Button | `register-submit-btn` | `register-submit` | `Register.tsx` |
+| **Auth - Register** | Server Error Banner | `register-error-banner` | — | `Register.tsx` |
+| **Auth - Register** | Proceed to Login Button | `goto-login-btn` | — | `Register.tsx` |
+| **Dashboard** | Username Greeting | `dashboard-username` | — | `Dashboard.tsx` |
+| **Dashboard** | Role Indicator Badge | `dashboard-role-text` | `user-role-badge` | `Dashboard.tsx` |
+| **Dashboard** | View Users Action Button | `dashboard-view-users-btn` | `dashboard-view-users` | `Dashboard.tsx` |
+| **Dashboard** | Add User Action Button (Admin) | `dashboard-add-user-btn` | `dashboard-add-user` | `Dashboard.tsx` |
+| **Dashboard** | Logout Button | `dashboard-logout-btn` | `logout-button` | `Dashboard.tsx` |
+| **Users Directory** | Refresh Users Button | `refresh-users-btn` | — | `UsersList.tsx` |
+| **Users Directory** | Add User Button (Admin) | `add-user-btn` | `add-user-button` | `UsersList.tsx` |
+| **Users Directory** | Success Banner Alert | `success-banner` | — | `UsersList.tsx` |
+| **Users Directory** | Error Banner Alert | `error-banner` | — | `UsersList.tsx` |
+| **Users Directory** | Users Table Element | `user-table` | `user-table` | `UsersList.tsx` |
+| **Users Directory** | User Row Item | `user-row-{id}` | `user-row-{id}` | `UsersList.tsx` |
+| **Users Directory** | Delete User Action Button | `delete-user-{id}` | `delete-user-{id}` | `UsersList.tsx` |
+| **Modal - Add User**| Modal User Name Input | `new-user-name` | `new-user-name` | `UsersList.tsx` |
+| **Modal - Add User**| Modal User Email Input | `new-user-email` | `new-user-email` | `UsersList.tsx` |
+| **Modal - Add User**| Modal User Password Input | `new-user-password` | `new-user-password` | `UsersList.tsx` |
+| **Modal - Add User**| Modal Submit Button | `create-user-submit-btn` | `create-user-submit` | `UsersList.tsx` |
+| **Modal - Add User**| Modal Cancel Button | `cancel-add-user-btn` | — | `UsersList.tsx` |
+| **Modal - Delete**  | Confirm Deletion Button | `confirm-delete-btn` | `confirm-delete` | `UsersList.tsx` |
+| **Modal - Delete**  | Cancel Deletion Button | `cancel-delete-btn` | `cancel-delete` | `UsersList.tsx` |
+| **Navigation**      | Dashboard Nav Link | `nav-dashboard` | — | `Navbar.tsx` |
+| **Navigation**      | Users Nav Link | `nav-users` | — | `Navbar.tsx` |
+| **Navigation**      | User Display Name | `user-display-name` | — | `Navbar.tsx` |
+| **Navigation**      | Current User Role Badge | `user-role-badge` | `user-role-badge` | `Navbar.tsx` |
+| **Navigation**      | Sign Out Button | `logout-btn` | `logout-button` | `Navbar.tsx` |
+| **Navigation**      | Sign In Nav Link (Public) | `nav-login` | — | `Navbar.tsx` |
+| **Navigation**      | Register Nav Link (Public)| `nav-register` | — | `Navbar.tsx` |
 
 These are selectors only. No testing framework is embedded in the
-application.
+application codebase.
 
 ------------------------------------------------------------------------
 
 # 30. Build Verification
 
-The project has previously been verified with:
+The project has been verified across all components (latest verification: 27 September 2026):
 
-### Backend
+### Backend Build
 
 ``` bash
 mvn clean compile
 ```
 
-Expected:
-
+Result:
 ``` text
-BUILD SUCCESS
+BUILD SUCCESS (24 Java classes compiled with 0 errors)
 ```
 
-### Frontend TypeScript
+### Frontend TypeScript Check
 
 ``` bash
 npm run lint
 ```
 
-The current project uses this script for TypeScript checking
-(`tsc --noEmit`), so it should be understood as a type-check command
-rather than a full ESLint run.
+The script executes `tsc --noEmit` and returns:
+``` text
+SUCCESS (0 type errors)
+```
 
-### Frontend production build
+### Frontend Production Build
 
 ``` bash
 npm run build
 ```
 
-Expected:
-
+Result:
 ``` text
-Production build succeeds
+Production build succeeds (Clean distribution bundle generated in dist/ in 520ms)
 ```
-
-The handover should be updated if later verification changes these
-results.
 
 ------------------------------------------------------------------------
 
@@ -1539,18 +1593,22 @@ Registration
 Login
 Logout
 Protected Routes
-JWT Authentication
-BCrypt Password Hashing
+JWT Authentication (HMAC-SHA256)
+BCrypt Password Hashing (Work Factor 10)
 USER / ADMIN RBAC
-View Users
-ADMIN Add User
-ADMIN Delete User
-Admin Self-Delete Protection
-Input Validation
-Duplicate Email Protection
-Centralized Error Handling
-MySQL Persistence
-Stable UI Selectors
+Role-Differentiated Dashboard (Live Metrics for Admin, Account Summary for User)
+User Directory Listing
+Directory Search (Name / Email) & Role Filters
+ADMIN Add User (Modal + URL shortcut /users?action=add)
+ADMIN Delete User (Confirmation Modal)
+Dual-Layer Admin Self-Delete Protection (UI Disable + Backend Guard)
+Input Validation & Inline Error Feedback
+Duplicate Email Collision Protection
+Centralized Error Handling (@RestControllerAdvice)
+MySQL Persistence (Spring Data JPA / Hibernate)
+Tailwind CSS v4 Design Tokens & Inter Typography
+Responsive Mobile Navigation Drawer
+Comprehensive Deterministic Test Selectors (Selenium & Postman)
 ```
 
 The application is now ready to move from the **application-building

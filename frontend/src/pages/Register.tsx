@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Shield, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { ApiError } from '../types';
 
 export const Register: React.FC = () => {
@@ -68,46 +68,47 @@ export const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        {/* Ambient background glow */}
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-4">
-            <UserPlus className="w-6 h-6" />
+    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-[#111827] border border-[#263247] rounded-xl p-6 sm:p-7 space-y-5">
+        {/* Brand Header */}
+        <div>
+          <div className="flex items-center space-x-2 text-[#4F46E5] mb-3">
+            <Shield className="w-5 h-5" />
+            <span className="font-semibold text-sm tracking-wide text-[#F8FAFC]">UMS</span>
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Create Account</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Register to join the User Management System
+          <h1 className="text-xl font-semibold text-[#F8FAFC] tracking-tight">
+            Create an account
+          </h1>
+          <p className="text-xs text-[#94A3B8] mt-1">
+            Enter your details to create a new user account.
           </p>
         </div>
 
         {isSuccess ? (
-          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6 text-center space-y-4">
-            <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-6 h-6" />
+          <div className="bg-[#172033] border border-[#263247] rounded-lg p-5 text-center space-y-4">
+            <div className="w-10 h-10 bg-[#16A34A]/10 text-[#16A34A] rounded-full flex items-center justify-center mx-auto border border-[#16A34A]/30">
+              <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">Registration Successful!</h3>
-              <p className="text-sm text-slate-300 mt-1">
-                Your account <span className="font-semibold text-emerald-400">{email}</span> has been saved in MySQL with role <span className="font-bold text-blue-400">USER</span>.
+              <h3 className="text-base font-semibold text-[#F8FAFC]">Account Created</h3>
+              <p className="text-xs text-[#94A3B8] mt-1">
+                Your account <span className="font-medium text-[#F8FAFC]">{email}</span> is registered with standard access.
               </p>
             </div>
             <button
               onClick={() => navigate('/login')}
               id="goto-login-btn"
-              className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow-md transition-all flex items-center justify-center space-x-2"
+              className="w-full py-2 px-4 bg-[#4F46E5] hover:bg-[#4338CA] text-[#F8FAFC] font-medium text-sm rounded-md transition-colors duration-150 flex items-center justify-center space-x-2"
             >
-              <span>Proceed to Login</span>
+              <span>Proceed to Sign In</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
             {serverError && (
               <div
-                className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm flex items-start space-x-2"
+                className="bg-[#172033] border border-[#DC2626]/40 text-[#DC2626] px-3.5 py-2.5 rounded-md text-xs flex items-start space-x-2"
                 role="alert"
                 id="register-error-banner"
               >
@@ -117,102 +118,82 @@ export const Register: React.FC = () => {
             )}
 
             <div>
-              <label htmlFor="name-input" className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Full Name <span className="text-red-400">*</span>
+              <label htmlFor="name-input" className="block text-xs font-medium text-[#94A3B8] mb-1.5">
+                Full Name <span className="text-[#DC2626]">*</span>
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <User className="w-4 h-4" />
-                </div>
-                <input
-                  id="name-input"
-                  data-testid="register-name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Sujan Palanisamy"
-                  className={`w-full pl-10 pr-4 py-2.5 bg-slate-950/60 border ${
-                    formErrors.name ? 'border-red-500 focus:border-red-500' : 'border-slate-800 focus:border-indigo-500'
-                  } rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors`}
-                />
-              </div>
+              <input
+                id="name-input"
+                data-testid="register-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Full name"
+                className={`w-full px-3 py-2 bg-[#0B1120] border ${
+                  formErrors.name ? 'border-[#DC2626]' : 'border-[#263247]'
+                } rounded-md text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] transition-colors duration-150`}
+              />
               {formErrors.name && (
-                <p className="text-xs text-red-400 mt-1" id="name-error">{formErrors.name}</p>
+                <p className="text-xs text-[#DC2626] mt-1" id="name-error">{formErrors.name}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="email-input" className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Email Address <span className="text-red-400">*</span>
+              <label htmlFor="email-input" className="block text-xs font-medium text-[#94A3B8] mb-1.5">
+                Email Address <span className="text-[#DC2626]">*</span>
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <input
-                  id="email-input"
-                  data-testid="register-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="sujan@example.com"
-                  className={`w-full pl-10 pr-4 py-2.5 bg-slate-950/60 border ${
-                    formErrors.email ? 'border-red-500 focus:border-red-500' : 'border-slate-800 focus:border-indigo-500'
-                  } rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors`}
-                />
-              </div>
+              <input
+                id="email-input"
+                data-testid="register-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+                className={`w-full px-3 py-2 bg-[#0B1120] border ${
+                  formErrors.email ? 'border-[#DC2626]' : 'border-[#263247]'
+                } rounded-md text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] transition-colors duration-150`}
+              />
               {formErrors.email && (
-                <p className="text-xs text-red-400 mt-1" id="email-error">{formErrors.email}</p>
+                <p className="text-xs text-[#DC2626] mt-1" id="email-error">{formErrors.email}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="password-input" className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Password <span className="text-red-400">*</span>
+              <label htmlFor="password-input" className="block text-xs font-medium text-[#94A3B8] mb-1.5">
+                Password <span className="text-[#DC2626]">*</span>
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
-                  id="password-input"
-                  data-testid="register-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
-                  className={`w-full pl-10 pr-4 py-2.5 bg-slate-950/60 border ${
-                    formErrors.password ? 'border-red-500 focus:border-red-500' : 'border-slate-800 focus:border-indigo-500'
-                  } rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors`}
-                />
-              </div>
+              <input
+                id="password-input"
+                data-testid="register-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Minimum 8 characters"
+                className={`w-full px-3 py-2 bg-[#0B1120] border ${
+                  formErrors.password ? 'border-[#DC2626]' : 'border-[#263247]'
+                } rounded-md text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] transition-colors duration-150`}
+              />
               {formErrors.password && (
-                <p className="text-xs text-red-400 mt-1" id="password-error">{formErrors.password}</p>
+                <p className="text-xs text-[#DC2626] mt-1" id="password-error">{formErrors.password}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="confirm-password-input" className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Confirm Password <span className="text-red-400">*</span>
+              <label htmlFor="confirm-password-input" className="block text-xs font-medium text-[#94A3B8] mb-1.5">
+                Confirm Password <span className="text-[#DC2626]">*</span>
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
-                  id="confirm-password-input"
-                  data-testid="register-confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter password"
-                  className={`w-full pl-10 pr-4 py-2.5 bg-slate-950/60 border ${
-                    formErrors.confirmPassword ? 'border-red-500 focus:border-red-500' : 'border-slate-800 focus:border-indigo-500'
-                  } rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors`}
-                />
-              </div>
+              <input
+                id="confirm-password-input"
+                data-testid="register-confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter password"
+                className={`w-full px-3 py-2 bg-[#0B1120] border ${
+                  formErrors.confirmPassword ? 'border-[#DC2626]' : 'border-[#263247]'
+                } rounded-md text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] transition-colors duration-150`}
+              />
               {formErrors.confirmPassword && (
-                <p className="text-xs text-red-400 mt-1" id="confirm-password-error">{formErrors.confirmPassword}</p>
+                <p className="text-xs text-[#DC2626] mt-1" id="confirm-password-error">{formErrors.confirmPassword}</p>
               )}
             </div>
 
@@ -222,20 +203,20 @@ export const Register: React.FC = () => {
                 id="register-submit-btn"
                 data-testid="register-submit"
                 disabled={isSubmitting}
-                className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                className="w-full py-2 px-4 bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 text-[#F8FAFC] font-medium text-sm rounded-md transition-colors duration-150 flex items-center justify-center space-x-2"
               >
                 {isSubmitting ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-[#F8FAFC] border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <span>Register</span>
+                  <span>Create account</span>
                 )}
               </button>
             </div>
 
-            <p className="text-center text-xs text-slate-400 pt-3">
+            <p className="text-center text-xs text-[#94A3B8] pt-1">
               Already have an account?{' '}
-              <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-semibold">
-                Sign in here
+              <Link to="/login" className="text-[#93C5FD] hover:text-[#BFDBFE] font-medium">
+                Sign in
               </Link>
             </p>
           </form>

@@ -14,7 +14,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-6 h-6 border-2 border-[#4F46E5] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -25,13 +25,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
 
   if (requireAdmin && !isAdmin) {
     return (
-      <div className="max-w-xl mx-auto mt-16 p-8 bg-slate-900 border border-red-500/30 rounded-2xl text-center shadow-xl">
-        <div className="w-16 h-16 mx-auto mb-4 bg-red-500/10 text-red-400 rounded-full flex items-center justify-center">
-          <ShieldAlert className="w-8 h-8" />
+      <div className="max-w-md mx-auto mt-16 p-6 bg-[#111827] border border-[#263247] rounded-xl text-center space-y-3">
+        <div className="w-10 h-10 mx-auto bg-[#172033] text-[#DC2626] border border-[#263247] rounded-full flex items-center justify-center">
+          <ShieldAlert className="w-5 h-5" />
         </div>
-        <h2 className="text-xl font-bold text-white mb-2">403 Forbidden: Access Denied</h2>
-        <p className="text-slate-400 text-sm mb-6">
-          This area requires <span className="text-emerald-400 font-semibold">ADMIN</span> privileges. Your current role is restricted.
+        <h2 className="text-base font-semibold text-[#F8FAFC]">403 Forbidden: Access Denied</h2>
+        <p className="text-[#94A3B8] text-xs">
+          This section requires administrator privileges. Your current role is restricted.
         </p>
         <Navigate to="/dashboard" replace />
       </div>

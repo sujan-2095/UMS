@@ -13,17 +13,17 @@ const AppContent: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-medium text-slate-400">Loading User Management System...</p>
+      <div className="min-h-screen bg-[#0B1120] flex items-center justify-center text-[#F8FAFC]">
+        <div className="flex flex-col items-center space-y-3">
+          <div className="w-7 h-7 border-2 border-[#4F46E5] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-[#94A3B8]">Loading application...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-[#0B1120] text-[#F8FAFC] flex flex-col font-sans">
       <Navbar />
 
       <main className="flex-1">

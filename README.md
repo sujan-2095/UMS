@@ -35,7 +35,7 @@ A production-grade, full-stack **User Management System (UMS)** built with **Spr
 
 ## Current State & Recent Updates
 
-The project has transitioned from a dual-stack experimental prototype into a clean, unified production monorepo:
+The project is organized as a clean, unified production monorepo:
 
 1. **Clean Directory Separation**:
    - The workspace is cleanly split into two dedicated directories: `backend/` (Spring Boot 3) and `frontend/` (React 19 + TypeScript + Vite).
@@ -52,13 +52,34 @@ The project has transitioned from a dual-stack experimental prototype into a cle
 
 4. **Standardized Input Validation**:
    - Enforced a uniform minimum 8-character password constraint across both the backend (`@Size(min = 8)` in Jakarta Bean Validation) and frontend forms (`Register.tsx`, `UsersList.tsx`).
+   - Frontend validation enforces strict name (alphabetic + spaces, 2-50 chars) and email format regex patterns.
 
-5. **Flexible Environment Configuration**:
+5. **Tailwind CSS v4 Design System & Modern UI**:
+   - Dark mode slate/indigo design system configured via `@layer base` CSS variables (`--bg-base: #0B1120`, `--surface: #111827`, `--surface-elevated: #172033`, `--border: #263247`, `--text-primary: #F8FAFC`, `--text-secondary: #94A3B8`, `--primary: #4F46E5`).
+   - Google Font Inter typography integration with antialiased font rendering and custom slim scrollbars.
+   - Responsive layout with mobile navigation drawer and hamburger menu toggle (`Navbar.tsx`).
+
+6. **Role-Differentiated Dashboard & Live Metrics**:
+   - **Admin View**: Displays real-time aggregated metrics calculated directly from database records (Total Users, Administrators, Standard Users), recent registrations table (latest 5 users), and quick navigation shortcuts.
+   - **User View**: Streamlined Account Summary card displaying user profile details, active role, and read-only tier indicator.
+
+7. **User Directory Live Search, Role Filtering & Dual-Layer Deletion Protection**:
+   - Real-time client-side search across user names and email addresses with instant clear action.
+   - Interactive role filter buttons (`All`, `ADMIN`, `USER`) with matching user count indicators.
+   - UI delete button automatically disabled (`opacity-30 cursor-not-allowed`) for current logged-in admin with informative tooltip, paired with backend validation.
+   - Modal confirmation before user deletion and dismissible alert banners for feedback.
+
+8. **Flexible Environment Configuration**:
    - `application.properties` supports external environment variable overrides (`PORT`, `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `JWT_EXPIRATION_MS`, `INITIAL_ADMIN_*`, and `CORS_ALLOWED_ORIGINS`).
 
-6. **Modern Frontend Integration**:
-   - Powered by React 19, TypeScript, Tailwind CSS v4, Lucide React icons, and Framer Motion transitions.
+9. **Vite Development Proxy**:
    - Development server on port `3000` with an automatic reverse proxy for `/api` routing to `http://localhost:8080`.
+
+10. **Clean Developer Experience & Logging Optimization**:
+    - Filtered root logging to `WARN` while preserving application-level `INFO` for `com.example.ums`.
+    - Disabled Open EntityManager in View (`spring.jpa.open-in-view=false`) to eliminate startup warnings and enforce transaction boundaries.
+    - Removed redundant Hibernate dialect property in favor of Hibernate 6 automated dialect detection.
+    - Configured `<jvmArguments>--enable-native-access=ALL-UNNAMED</jvmArguments>` in `spring-boot-maven-plugin` to eliminate Java 25 Tomcat native JNI warnings.
 
 ---
 
@@ -224,6 +245,9 @@ The backend configuration is managed in `backend/src/main/resources/application.
 | `spring.datasource.url` | `DB_URL` | `jdbc:mysql://localhost:3306/ums_db?...` | MySQL JDBC connection string |
 | `spring.datasource.username` | `DB_USERNAME` | `root` | MySQL username |
 | `spring.datasource.password` | `DB_PASSWORD` | `root` | MySQL password |
+| `spring.jpa.open-in-view` | — | `false` | Disables Open EntityManager in View |
+| `logging.level.root` | — | `WARN` | Root framework logging level |
+| `logging.level.com.example.ums` | — | `INFO` | Application-specific logging level |
 | `ums.jwt.secret` | `JWT_SECRET` | `404E635266556...` | 256-bit secret key for HMAC-SHA256 |
 | `ums.jwt.expiration-ms` | `JWT_EXPIRATION_MS` | `86400000` | JWT token validity in ms (24 hours) |
 | `ums.init.admin.email` | `INITIAL_ADMIN_EMAIL` | `admin@test.com` | Seed administrator email |
@@ -246,6 +270,11 @@ The backend configuration is managed in `backend/src/main/resources/application.
    ```bash
    mvn clean spring-boot:run
    ```
+   > [!TIP]
+   > For the cleanest terminal during development with zero Maven build noise, run with quiet mode:
+   > ```bash
+   > mvn -q spring-boot:run
+   > ```
 4. The Spring Boot API will start on **`http://localhost:8080`**.
 
 ### 2. Frontend Setup (React + Vite)
@@ -502,28 +531,49 @@ All backend exceptions are intercepted by `GlobalExceptionHandler` and returned 
 
 All key interactive components are tagged with permanent, deterministic `id` and `data-testid` attributes to support automated testing without brittle selectors:
 
-| Element Description | HTML `id` | `data-testid` | Source File |
-|---|---|---|---|
-| Register Name Input | `name-input` | `register-name` | `Register.tsx` |
-| Register Email Input | `email-input` | `register-email` | `Register.tsx` |
-| Register Password Input | `password-input` | `register-password` | `Register.tsx` |
-| Register Confirm Password Input | `confirm-password-input` | `register-confirm-password` | `Register.tsx` |
-| Register Submit Button | `register-submit-btn` | `register-submit` | `Register.tsx` |
-| Login Email Input | `login-email-input` | `login-email` | `Login.tsx` |
-| Login Password Input | `login-password-input` | `login-password` | `Login.tsx` |
-| Login Submit Button | `login-submit-btn` | `login-submit` | `Login.tsx` |
-| Users Table Element | `user-table` | `user-table` | `UsersList.tsx` |
-| User Row Item | `user-row-{id}` | `user-row-{id}` | `UsersList.tsx` |
-| Add User Button | `add-user-btn` | `add-user-button` | `UsersList.tsx` |
-| Modal New User Name Input | `new-user-name` | `new-user-name` | `UsersList.tsx` |
-| Modal New User Email Input | `new-user-email` | `new-user-email` | `UsersList.tsx` |
-| Modal New User Password Input | `new-user-password` | `new-user-password` | `UsersList.tsx` |
-| Modal Create User Submit Button | `create-user-submit-btn` | `create-user-submit` | `UsersList.tsx` |
-| Table Delete User Button | `delete-user-{id}` | `delete-user-{id}` | `UsersList.tsx` |
-| Modal Confirm Delete Button | `confirm-delete-btn` | `confirm-delete` | `UsersList.tsx` |
-| Modal Cancel Delete Button | `cancel-delete-btn` | `cancel-delete` | `UsersList.tsx` |
-| Navigation / Header Logout Button | `logout-btn` | `logout-button` | `Navbar.tsx` |
-| Current User Role Badge | `user-role-badge` | `user-role-badge` | `Navbar.tsx` & `Dashboard.tsx` |
+| Component | Element Description | HTML `id` | `data-testid` | Source File |
+|---|---|---|---|---|
+| **Auth - Login** | Email Input | `login-email-input` | `login-email` | `Login.tsx` |
+| **Auth - Login** | Password Input | `login-password-input` | `login-password` | `Login.tsx` |
+| **Auth - Login** | Submit Button | `login-submit-btn` | `login-submit` | `Login.tsx` |
+| **Auth - Login** | Error Banner Alert | `login-error-banner` | — | `Login.tsx` |
+| **Auth - Register** | Full Name Input | `name-input` | `register-name` | `Register.tsx` |
+| **Auth - Register** | Name Validation Error | `name-error` | — | `Register.tsx` |
+| **Auth - Register** | Email Input | `email-input` | `register-email` | `Register.tsx` |
+| **Auth - Register** | Email Validation Error | `email-error` | — | `Register.tsx` |
+| **Auth - Register** | Password Input | `password-input` | `register-password` | `Register.tsx` |
+| **Auth - Register** | Password Validation Error | `password-error` | — | `Register.tsx` |
+| **Auth - Register** | Confirm Password Input | `confirm-password-input` | `register-confirm-password` | `Register.tsx` |
+| **Auth - Register** | Confirm Password Error | `confirm-password-error` | — | `Register.tsx` |
+| **Auth - Register** | Submit Button | `register-submit-btn` | `register-submit` | `Register.tsx` |
+| **Auth - Register** | Server Error Banner | `register-error-banner` | — | `Register.tsx` |
+| **Auth - Register** | Proceed to Login Button | `goto-login-btn` | — | `Register.tsx` |
+| **Dashboard** | Username Greeting | `dashboard-username` | — | `Dashboard.tsx` |
+| **Dashboard** | Role Indicator Badge | `dashboard-role-text` | `user-role-badge` | `Dashboard.tsx` |
+| **Dashboard** | View Users Action Button | `dashboard-view-users-btn` | `dashboard-view-users` | `Dashboard.tsx` |
+| **Dashboard** | Add User Action Button (Admin) | `dashboard-add-user-btn` | `dashboard-add-user` | `Dashboard.tsx` |
+| **Dashboard** | Logout Button | `dashboard-logout-btn` | `logout-button` | `Dashboard.tsx` |
+| **Users Directory** | Refresh Users Button | `refresh-users-btn` | — | `UsersList.tsx` |
+| **Users Directory** | Add User Button (Admin) | `add-user-btn` | `add-user-button` | `UsersList.tsx` |
+| **Users Directory** | Success Banner Alert | `success-banner` | — | `UsersList.tsx` |
+| **Users Directory** | Error Banner Alert | `error-banner` | — | `UsersList.tsx` |
+| **Users Directory** | Users Table Element | `user-table` | `user-table` | `UsersList.tsx` |
+| **Users Directory** | User Row Item | `user-row-{id}` | `user-row-{id}` | `UsersList.tsx` |
+| **Users Directory** | Delete User Action Button | `delete-user-{id}` | `delete-user-{id}` | `UsersList.tsx` |
+| **Modal - Add User**| Modal User Name Input | `new-user-name` | `new-user-name` | `UsersList.tsx` |
+| **Modal - Add User**| Modal User Email Input | `new-user-email` | `new-user-email` | `UsersList.tsx` |
+| **Modal - Add User**| Modal User Password Input | `new-user-password` | `new-user-password` | `UsersList.tsx` |
+| **Modal - Add User**| Modal Submit Button | `create-user-submit-btn` | `create-user-submit` | `UsersList.tsx` |
+| **Modal - Add User**| Modal Cancel Button | `cancel-add-user-btn` | — | `UsersList.tsx` |
+| **Modal - Delete**  | Confirm Deletion Button | `confirm-delete-btn` | `confirm-delete` | `UsersList.tsx` |
+| **Modal - Delete**  | Cancel Deletion Button | `cancel-delete-btn` | `cancel-delete` | `UsersList.tsx` |
+| **Navigation**      | Dashboard Nav Link | `nav-dashboard` | — | `Navbar.tsx` |
+| **Navigation**      | Users Nav Link | `nav-users` | — | `Navbar.tsx` |
+| **Navigation**      | User Display Name | `user-display-name` | — | `Navbar.tsx` |
+| **Navigation**      | Current User Role Badge | `user-role-badge` | `user-role-badge` | `Navbar.tsx` |
+| **Navigation**      | Sign Out Button | `logout-btn` | `logout-button` | `Navbar.tsx` |
+| **Navigation**      | Sign In Nav Link (Public) | `nav-login` | — | `Navbar.tsx` |
+| **Navigation**      | Register Nav Link (Public)| `nav-register` | — | `Navbar.tsx` |
 
 ---
 
@@ -545,4 +595,4 @@ npm run lint    # runs tsc --noEmit
 npm run build   # runs vite build
 ```
 - **TypeScript Linting**: **SUCCESS** (0 type errors).
-- **Vite Production Build**: **SUCCESS** (Clean distribution bundle generated in `dist/`).
+- **Vite Production Build**: **SUCCESS** (Clean distribution bundle generated in `dist/` in 520ms).

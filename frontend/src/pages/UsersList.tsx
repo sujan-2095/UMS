@@ -1,20 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/api';
-import { User, ApiError } from '../types';
+import { User, Role, ApiError } from '../types';
 import {
-  Users,
   UserPlus,
   Trash2,
-  Shield,
   AlertCircle,
   CheckCircle2,
   X,
   RefreshCw,
-  Lock,
-  Mail,
-  Key,
+  Search,
+  Filter,
 } from 'lucide-react';
 
 export const UsersList: React.FC = () => {
@@ -24,6 +21,10 @@ export const UsersList: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Filter & Search states
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | Role>('ALL');
 
   // Add User Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
@@ -37,6 +38,8 @@ export const UsersList: React.FC = () => {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const fetchUsers = async () => {
     setLoading(true);
     setErrorMessage(null);
@@ -45,13 +48,11 @@ export const UsersList: React.FC = () => {
       setUsers(data);
     } catch (err: any) {
       const apiErr = err as ApiError;
-      setErrorMessage(apiErr.message || 'Failed to fetch users from backend');
+      setErrorMessage(apiErr.message || 'Failed to fetch users from database');
     } finally {
       setLoading(false);
     }
   };
-
-  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     fetchUsers();
@@ -108,10 +109,10 @@ export const UsersList: React.FC = () => {
         password: newPassword,
       });
 
-      setSuccessMessage(`User "${created.name}" created successfully in MySQL!`);
+      setSuccessMessage(`User "${created.name}" created successfully.`);
       setIsAddModalOpen(false);
       await fetchUsers();
-      setTimeout(() => setSuccessMessage(null), 5000);
+      setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err: any) {
       const apiErr = err as ApiError;
       setErrorMessage(apiErr.message || 'Failed to create user');
@@ -139,7 +140,7 @@ export const UsersList: React.FC = () => {
       setSuccessMessage(`User "${userToDelete.name}" deleted successfully.`);
       setUserToDelete(null);
       await fetchUsers();
-      setTimeout(() => setSuccessMessage(null), 5000);
+      setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err: any) {
       const apiErr = err as ApiError;
       setErrorMessage(apiErr.message || 'Failed to delete user');
@@ -148,72 +149,81 @@ export const UsersList: React.FC = () => {
     }
   };
 
+  // Filtered users calculation
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      const matchesSearch =
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
+      return matchesSearch && matchesRole;
+    });
+  }, [users, searchTerm, roleFilter]);
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Header and Actions Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-5">
+      {/* Top Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">User Management</h1>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Directory of registered users persisted in MySQL
-              </p>
-            </div>
-          </div>
+          <h1 className="text-2xl sm:text-[28px] font-semibold text-[#F8FAFC] tracking-tight">
+            User Management
+          </h1>
+          <p className="text-sm text-[#94A3B8] mt-0.5">
+            Manage registered users and access.
+          </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2.5">
           <button
             onClick={fetchUsers}
             id="refresh-users-btn"
             disabled={loading}
-            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors disabled:opacity-50"
+            className="p-2 bg-[#172033] hover:bg-[#1f2b44] text-[#94A3B8] hover:text-[#F8FAFC] border border-[#263247] rounded-md transition-colors duration-150 disabled:opacity-50"
             title="Refresh user list"
+            aria-label="Refresh user list"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
-          {/* Add User Button - Only for ADMIN (Section 19 & 20) */}
           {isAdmin && (
             <button
               onClick={handleOpenAddModal}
               id="add-user-btn"
               data-testid="add-user-button"
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center space-x-2 cursor-pointer"
+              className="px-3.5 py-2 bg-[#4F46E5] hover:bg-[#4338CA] text-[#F8FAFC] text-sm font-medium rounded-md transition-colors duration-150 inline-flex items-center space-x-1.5"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Add User</span>
+              <span>Add user</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Role Feedback Banner for Standard USER */}
+      {/* Simplified Read-Only Notice for Normal USER */}
       {!isAdmin && (
-        <div className="bg-slate-900/80 border border-blue-500/30 rounded-xl p-4 flex items-start space-x-3 text-sm text-slate-300">
-          <Shield className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+        <div className="bg-[#172033] border border-[#263247] rounded-md px-4 py-3 text-xs text-[#94A3B8] flex items-center justify-between">
           <div>
-            <span className="font-semibold text-white">Viewing as USER role: </span>
-            You have read-only access to view registered users. Administrative operations (Add User, Delete User) are hidden in UI and strictly rejected with <strong className="text-red-400">403 Forbidden</strong> on the backend.
+            <span className="font-medium text-[#F8FAFC]">Read-only access: </span>
+            You are viewing the user directory. Administrative actions (adding or deleting accounts) are restricted to administrators.
           </div>
         </div>
       )}
 
-      {/* Notifications */}
+      {/* Feedback Alerts */}
       {successMessage && (
         <div
-          className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 py-3 rounded-xl text-sm flex items-center justify-between"
+          className="bg-[#172033] border border-[#16A34A]/40 text-[#16A34A] px-4 py-2.5 rounded-md text-sm flex items-center justify-between"
           id="success-banner"
         >
           <div className="flex items-center space-x-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{successMessage}</span>
           </div>
-          <button onClick={() => setSuccessMessage(null)} className="text-emerald-400 hover:text-white">
+          <button
+            onClick={() => setSuccessMessage(null)}
+            className="text-[#16A34A] hover:text-[#F8FAFC] p-0.5"
+            aria-label="Dismiss alert"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -221,51 +231,104 @@ export const UsersList: React.FC = () => {
 
       {errorMessage && (
         <div
-          className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center justify-between"
+          className="bg-[#172033] border border-[#DC2626]/40 text-[#DC2626] px-4 py-2.5 rounded-md text-sm flex items-center justify-between"
           id="error-banner"
         >
           <div className="flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMessage}</span>
           </div>
-          <button onClick={() => setErrorMessage(null)} className="text-red-400 hover:text-white">
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-[#DC2626] hover:text-[#F8FAFC] p-0.5"
+            aria-label="Dismiss alert"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Users Table (Section 19) */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#111827] border border-[#263247] p-3 rounded-lg">
+        <div className="relative flex-1 max-w-sm">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#64748B]">
+            <Search className="w-4 h-4" />
+          </div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by name or email..."
+            className="w-full pl-9 pr-3 py-1.5 bg-[#0B1120] border border-[#263247] rounded-md text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] transition-colors duration-150"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-[#64748B] hover:text-[#F8FAFC]"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-1.5 text-xs text-[#94A3B8]">
+            <Filter className="w-3.5 h-3.5 text-[#64748B]" />
+            <span>Role:</span>
+            <div className="inline-flex rounded-md border border-[#263247] p-0.5 bg-[#0B1120]">
+              {(['ALL', 'ADMIN', 'USER'] as const).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRoleFilter(r)}
+                  className={`px-2.5 py-1 text-xs font-medium rounded transition-colors duration-150 ${
+                    roleFilter === r
+                      ? 'bg-[#172033] text-[#F8FAFC]'
+                      : 'text-[#94A3B8] hover:text-[#F8FAFC]'
+                  }`}
+                >
+                  {r === 'ALL' ? 'All' : r}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <span className="text-xs text-[#64748B] hidden sm:inline">
+            {filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'}
+          </span>
+        </div>
+      </div>
+
+      {/* Users Table */}
+      <div className="bg-[#111827] border border-[#263247] rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse" id="user-table" data-testid="user-table">
+          <table className="w-full text-left border-collapse text-sm" id="user-table" data-testid="user-table">
             <thead>
-              <tr className="bg-slate-950/60 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                <th className="py-3.5 px-6">ID</th>
-                <th className="py-3.5 px-6">Name</th>
-                <th className="py-3.5 px-6">Email</th>
-                <th className="py-3.5 px-6">Role</th>
-                <th className="py-3.5 px-6">Created Date</th>
-                {isAdmin && <th className="py-3.5 px-6 text-right">Actions</th>}
+              <tr className="bg-[#172033] border-b border-[#263247] text-xs font-medium text-[#94A3B8]">
+                <th className="py-3 px-4 sm:px-6">Name</th>
+                <th className="py-3 px-4 sm:px-6">Email</th>
+                <th className="py-3 px-4 sm:px-6">Role</th>
+                <th className="py-3 px-4 sm:px-6">Created Date</th>
+                {isAdmin && <th className="py-3 px-4 sm:px-6 text-right">Actions</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80 text-sm">
+            <tbody className="divide-y divide-[#263247]">
               {loading && users.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 6 : 5} className="py-12 text-center text-slate-400">
+                  <td colSpan={isAdmin ? 5 : 4} className="py-12 text-center text-[#94A3B8]">
                     <div className="flex flex-col items-center justify-center space-y-2">
-                      <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                      <span>Loading users from database...</span>
+                      <div className="w-5 h-5 border-2 border-[#4F46E5] border-t-transparent rounded-full animate-spin" />
+                      <span className="text-xs">Loading users...</span>
                     </div>
                   </td>
                 </tr>
-              ) : users.length === 0 ? (
+              ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 6 : 5} className="py-12 text-center text-slate-400">
-                    No users found in database.
+                  <td colSpan={isAdmin ? 5 : 4} className="py-12 text-center text-xs text-[#94A3B8]">
+                    {users.length === 0 ? 'No users registered yet.' : 'No users match the active search or filter.'}
                   </td>
                 </tr>
               ) : (
-                users.map((u) => {
+                filteredUsers.map((u) => {
                   const isCurrentAdmin = Boolean(currentUser && currentUser.id === u.id);
 
                   return (
@@ -273,40 +336,39 @@ export const UsersList: React.FC = () => {
                       key={u.id}
                       id={`user-row-${u.id}`}
                       data-testid={`user-row-${u.id}`}
-                      className="hover:bg-slate-800/40 transition-colors"
+                      className="hover:bg-[#172033]/50 transition-colors duration-150"
                     >
-                      <td className="py-4 px-6 font-mono text-xs text-slate-400">
-                        #{u.id}
+                      <td className="py-3 px-4 sm:px-6 font-medium text-[#F8FAFC]">
+                        <div className="flex items-center space-x-2">
+                          <span>{u.name}</span>
+                          {isCurrentAdmin && (
+                            <span className="text-[10px] font-medium bg-[#172033] text-[#94A3B8] px-1.5 py-0.5 rounded border border-[#263247]">
+                              You
+                            </span>
+                          )}
+                        </div>
                       </td>
-                      <td className="py-4 px-6 font-medium text-white flex items-center space-x-2">
-                        <span>{u.name}</span>
-                        {isCurrentAdmin && (
-                          <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700">
-                            You
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-4 px-6 text-slate-300 font-mono text-xs">
+                      <td className="py-3 px-4 sm:px-6 text-[#94A3B8] font-mono text-xs">
                         {u.email}
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-3 px-4 sm:px-6">
                         <span
-                          className={`text-xs uppercase tracking-wider font-bold px-2.5 py-1 rounded-full border ${
+                          className={`text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
                             u.role === 'ADMIN'
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                              : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                              ? 'bg-[#172033] text-[#93C5FD] border-[#263247]'
+                              : 'bg-[#172033] text-[#94A3B8] border-[#263247]'
                           }`}
                         >
                           {u.role}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-xs text-slate-400 font-mono">
+                      <td className="py-3 px-4 sm:px-6 text-xs text-[#64748B] font-mono">
                         {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
                       </td>
 
-                      {/* Actions: ADMIN ONLY (Section 19) */}
+                      {/* Admin Actions */}
                       {isAdmin && (
-                        <td className="py-4 px-6 text-right">
+                        <td className="py-3 px-4 sm:px-6 text-right">
                           <button
                             onClick={() => handleDeleteClick(u)}
                             id={`delete-user-${u.id}`}
@@ -317,10 +379,10 @@ export const UsersList: React.FC = () => {
                                 ? 'Cannot delete your own admin account'
                                 : `Delete ${u.name}`
                             }
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all inline-flex items-center space-x-1 ${
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors duration-150 inline-flex items-center space-x-1.5 ${
                               isCurrentAdmin
-                                ? 'opacity-40 cursor-not-allowed bg-slate-800 text-slate-500'
-                                : 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500/40 cursor-pointer'
+                                ? 'opacity-30 cursor-not-allowed text-[#64748B]'
+                                : 'text-[#DC2626] hover:bg-[#DC2626]/10 border border-transparent hover:border-[#DC2626]/30'
                             }`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -337,33 +399,29 @@ export const UsersList: React.FC = () => {
         </div>
       </div>
 
-      {/* Add User Modal (Section 20: Admin only) */}
+      {/* Add User Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 sm:p-8 shadow-2xl relative">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                  <UserPlus className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">Add New User</h3>
-                  <p className="text-xs text-slate-400">Admin-only user creation</p>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1120]/80">
+          <div className="bg-[#111827] border border-[#263247] rounded-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-start justify-between pb-3 border-b border-[#263247]">
+              <div>
+                <h3 className="text-base font-semibold text-[#F8FAFC]">Add user</h3>
+                <p className="text-xs text-[#94A3B8] mt-0.5">Create a new user account.</p>
               </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
                 id="cancel-add-user-btn"
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                className="p-1 rounded-md text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#172033] transition-colors"
+                aria-label="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleCreateUser} className="space-y-4" noValidate>
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5" htmlFor="new-user-name">
-                  Full Name <span className="text-red-400">*</span>
+                <label className="block text-xs font-medium text-[#94A3B8] mb-1.5" htmlFor="new-user-name">
+                  Name <span className="text-[#DC2626]">*</span>
                 </label>
                 <input
                   id="new-user-name"
@@ -371,19 +429,19 @@ export const UsersList: React.FC = () => {
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. Arun Kumar"
-                  className={`w-full px-4 py-2.5 bg-slate-950/60 border ${
-                    addFormErrors.name ? 'border-red-500' : 'border-slate-800'
-                  } rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500`}
+                  placeholder="Full name"
+                  className={`w-full px-3 py-2 bg-[#0B1120] border ${
+                    addFormErrors.name ? 'border-[#DC2626]' : 'border-[#263247]'
+                  } rounded-md text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] transition-colors duration-150`}
                 />
                 {addFormErrors.name && (
-                  <p className="text-xs text-red-400 mt-1">{addFormErrors.name}</p>
+                  <p className="text-xs text-[#DC2626] mt-1">{addFormErrors.name}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5" htmlFor="new-user-email">
-                  Email Address <span className="text-red-400">*</span>
+                <label className="block text-xs font-medium text-[#94A3B8] mb-1.5" htmlFor="new-user-email">
+                  Email <span className="text-[#DC2626]">*</span>
                 </label>
                 <input
                   id="new-user-email"
@@ -391,19 +449,19 @@ export const UsersList: React.FC = () => {
                   type="email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="arun@test.com"
-                  className={`w-full px-4 py-2.5 bg-slate-950/60 border ${
-                    addFormErrors.email ? 'border-red-500' : 'border-slate-800'
-                  } rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500`}
+                  placeholder="Email address"
+                  className={`w-full px-3 py-2 bg-[#0B1120] border ${
+                    addFormErrors.email ? 'border-[#DC2626]' : 'border-[#263247]'
+                  } rounded-md text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] transition-colors duration-150`}
                 />
                 {addFormErrors.email && (
-                  <p className="text-xs text-red-400 mt-1">{addFormErrors.email}</p>
+                  <p className="text-xs text-[#DC2626] mt-1">{addFormErrors.email}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5" htmlFor="new-user-password">
-                  Password <span className="text-red-400">*</span>
+                <label className="block text-xs font-medium text-[#94A3B8] mb-1.5" htmlFor="new-user-password">
+                  Password <span className="text-[#DC2626]">*</span>
                 </label>
                 <input
                   id="new-user-password"
@@ -411,21 +469,21 @@ export const UsersList: React.FC = () => {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="At least 8 characters"
-                  className={`w-full px-4 py-2.5 bg-slate-950/60 border ${
-                    addFormErrors.password ? 'border-red-500' : 'border-slate-800'
-                  } rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500`}
+                  placeholder="Password (minimum 8 characters)"
+                  className={`w-full px-3 py-2 bg-[#0B1120] border ${
+                    addFormErrors.password ? 'border-[#DC2626]' : 'border-[#263247]'
+                  } rounded-md text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#4F46E5] focus:ring-1 focus:ring-[#4F46E5] transition-colors duration-150`}
                 />
                 {addFormErrors.password && (
-                  <p className="text-xs text-red-400 mt-1">{addFormErrors.password}</p>
+                  <p className="text-xs text-[#DC2626] mt-1">{addFormErrors.password}</p>
                 )}
               </div>
 
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end space-x-2.5 pt-3 border-t border-[#263247]">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800"
+                  className="px-3.5 py-2 text-sm font-medium text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#172033] rounded-md transition-colors duration-150"
                 >
                   Cancel
                 </button>
@@ -434,12 +492,12 @@ export const UsersList: React.FC = () => {
                   id="create-user-submit-btn"
                   data-testid="create-user-submit"
                   disabled={isAdding}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center space-x-2"
+                  className="px-3.5 py-2 text-sm font-medium bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 text-[#F8FAFC] rounded-md transition-colors duration-150 flex items-center space-x-1.5"
                 >
                   {isAdding ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-[#F8FAFC] border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <span>Create User</span>
+                    <span>Create user</span>
                   )}
                 </button>
               </div>
@@ -448,32 +506,29 @@ export const UsersList: React.FC = () => {
         </div>
       )}
 
-      {/* Delete User Confirmation Modal (Section 19: Confirmation before deletion) */}
+      {/* Delete User Confirmation Modal */}
       {userToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl text-center space-y-4">
-            <div className="w-12 h-12 bg-red-500/10 text-red-400 rounded-full flex items-center justify-center mx-auto">
-              <Trash2 className="w-6 h-6" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1120]/80">
+          <div className="bg-[#111827] border border-[#263247] rounded-xl w-full max-w-sm p-6 space-y-4">
+            <div>
+              <h3 className="text-base font-semibold text-[#F8FAFC]">Delete user</h3>
+              <p className="text-xs text-[#94A3B8] mt-1">
+                Are you sure you want to delete this user? This action cannot be undone.
+              </p>
             </div>
 
-            <h3 className="text-lg font-bold text-white">Confirm User Deletion</h3>
-
-            <p className="text-sm text-slate-300">
-              Are you sure you want to delete this user?
-            </p>
-
-            <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-left text-xs font-mono">
-              <div className="text-white font-bold">{userToDelete.name}</div>
-              <div className="text-slate-400">{userToDelete.email}</div>
-              <div className="text-slate-500">ID: #{userToDelete.id} • Role: {userToDelete.role}</div>
+            <div className="bg-[#0B1120] p-3 rounded-md border border-[#263247] text-xs font-mono space-y-1">
+              <div className="text-[#F8FAFC] font-sans font-medium">{userToDelete.name}</div>
+              <div className="text-[#94A3B8]">{userToDelete.email}</div>
+              <div className="text-[#64748B]">Role: {userToDelete.role}</div>
             </div>
 
-            <div className="flex items-center justify-center space-x-3 pt-2">
+            <div className="flex items-center justify-end space-x-2.5 pt-2">
               <button
                 onClick={() => setUserToDelete(null)}
                 id="cancel-delete-btn"
                 data-testid="cancel-delete"
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm rounded-xl transition-colors"
+                className="px-3.5 py-2 bg-[#172033] hover:bg-[#1f2b44] text-[#94A3B8] hover:text-[#F8FAFC] text-sm font-medium rounded-md transition-colors duration-150"
               >
                 Cancel
               </button>
@@ -482,12 +537,12 @@ export const UsersList: React.FC = () => {
                 id="confirm-delete-btn"
                 data-testid="confirm-delete"
                 disabled={isDeleting}
-                className="px-5 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold text-sm rounded-xl shadow-lg shadow-red-600/20 transition-all flex items-center space-x-2"
+                className="px-3.5 py-2 bg-[#DC2626] hover:bg-[#B91C1C] disabled:opacity-50 text-[#F8FAFC] text-sm font-medium rounded-md transition-colors duration-150 flex items-center space-x-1.5"
               >
                 {isDeleting ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-[#F8FAFC] border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <span>Delete</span>
+                  <span>Delete user</span>
                 )}
               </button>
             </div>
