@@ -9,8 +9,8 @@
 | Phase | Focus Area | Key Deliverables | Status |
 | :--- | :--- | :--- | :---: |
 | **Phase 1** | **Development of UMS** | React UI, Spring Boot API, MySQL Schema | `Completed` |
-| **Phase 2** | **Local Configuration** | Config files, Datasource, E2E Connectivity | `Next Up` |
-| **Phase 3** | **Postman – API Testing** | Postman Collection, Status & Auth Validation | `Pending` |
+| **Phase 2** | **Local Configuration** | Config files, Datasource, E2E Connectivity | `Completed` |
+| **Phase 3** | **Postman – API Testing** | Postman Collection, Status & Auth Validation | `Next Up` |
 | **Phase 4** | **Automated Unit Testing** | JUnit 5 & Mockito test suites | `Pending` |
 | **Phase 5** | **Automated Integration Testing** | Full flow & Spring Security integration tests | `Pending` |
 | **Phase 6** | **GitHub Actions – CI/CD** | CI workflow yaml, automated build/test pipeline | `Pending` |
@@ -43,26 +43,26 @@
 
 ---
 
-### Phase 2: Local Configuration
+### Phase 2: Local Configuration (Completed)
 
 *Local environment provisioning, datasource parameterization, and connectivity validation.*
 
-- [ ] **Configure MySQL**
-  - [ ] Create local database instance & dedicated user credentials
-  - [ ] Configure character encoding (`utf8mb4`) and collation
-  - [ ] Verify local database service accessibility and privileges
-- [ ] **Configure Spring Boot Backend**
-  - [ ] Set up `application.yml` / `application.properties` with database connection string
-  - [ ] Configure HikariCP connection pooling parameters
-  - [ ] Configure JWT secrets, token expiration intervals, and CORS policies
-  - [ ] Verify backend boots cleanly without startup exceptions
-- [ ] **Configure React Frontend**
-  - [ ] Configure environment variables (`.env`, `VITE_API_BASE_URL` or `REACT_APP_API_BASE_URL`)
-  - [ ] Configure local dev proxy for seamless API requests
-- [ ] **Verify End-to-End Local Connectivity**
-  - [ ] Perform smoke test: Register user from React UI → Persist in MySQL via Spring Boot
-  - [ ] Perform smoke test: Authenticate user → Receive token → Access protected dashboard
-  - [ ] Verify full CRUD operations round-trip successfully
+- [x] **Configure MySQL**
+  - [x] Create local database instance & dedicated user credentials
+  - [x] Configure character encoding (`utf8mb4`) and collation
+  - [x] Verify local database service accessibility and privileges
+- [x] **Configure Spring Boot Backend**
+  - [x] Set up `application.yml` / `application.properties` with database connection string
+  - [x] Configure HikariCP connection pooling parameters
+  - [x] Configure JWT secrets, token expiration intervals, and CORS policies
+  - [x] Verify backend boots cleanly without startup exceptions
+- [x] **Configure React Frontend**
+  - [x] Configure environment variables (`.env`, `VITE_API_BASE_URL` or `REACT_APP_API_BASE_URL`)
+  - [x] Configure local dev proxy for seamless API requests
+- [x] **Verify End-to-End Local Connectivity**
+  - [x] Perform smoke test: Register user from React UI → Persist in MySQL via Spring Boot
+  - [x] Perform smoke test: Authenticate user → Receive token → Access protected dashboard
+  - [x] Verify full CRUD operations round-trip successfully
 
 ---
 
